@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QuackAssistant.Data;
@@ -11,9 +12,11 @@ using QuackAssistant.Data;
 namespace QuackAssistant.Migrations
 {
     [DbContext(typeof(QuackAssistantDbContext))]
-    partial class QuackAssistantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260104162303_UpdateMaxLenght")]
+    partial class UpdateMaxLenght
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -70,9 +73,6 @@ namespace QuackAssistant.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CreationTime")
-                        .IsUnique();
-
                     b.ToTable("Debts");
                 });
 
@@ -88,11 +88,6 @@ namespace QuackAssistant.Migrations
                     b.Property<Guid>("CategoryId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
                     b.Property<string>("Note")
                         .IsRequired()
                         .HasMaxLength(512)
@@ -104,12 +99,6 @@ namespace QuackAssistant.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
-
-                    b.HasIndex("Code")
-                        .IsUnique();
-
-                    b.HasIndex("TransactionTime")
-                        .IsUnique();
 
                     b.ToTable("Transactions");
                 });

@@ -6,7 +6,7 @@ using Telegram.Bot.Types;
 
 namespace QuackAssistant.CommandHandlers;
 
-[Command(TeleCommands.DebtOut, Description = "ghi nợ phải trả", Example = "/debtout a Mai, tiền điện, 500k")]
+// [Command(TeleCommands.DebtOut, Description = "ghi nợ phải trả", Example = "/debtout a Mai, tiền điện, 500k")]
 public class DebtOutCommandHandler : ICommandHandler
 {
     private readonly QuackAssistantDbContext _dbContext;

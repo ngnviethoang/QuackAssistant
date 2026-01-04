@@ -10,7 +10,7 @@ using Telegram.Bot.Types.Enums;
 
 namespace QuackAssistant.CommandHandlers;
 
-[Command(TeleCommands.DebtIn, Description = "ghi nợ phải thu", Example = "/debtin a Sơn, tiền cơm, 35k")]
+// [Command(TeleCommands.DebtIn, Description = "ghi nợ phải thu", Example = "/debtin a Sơn, tiền cơm, 35k")]
 public class DebtInCommandHandler : ICommandHandler
 {
     private readonly QuackAssistantDbContext _dbContext;
@@ -41,14 +41,7 @@ public class DebtInCommandHandler : ICommandHandler
             return;
         }
 
-        var debtRecord = new Debt
-        {
-            PersonName = personName,
-            Description = description,
-            Amount = (int)amount,
-            Direction = DebtDirectionType.Receivable,
-            CreationTime = DateTimeOffset.UtcNow
-        };
+        var debtRecord = new Debt(personName: personName, description: description, amount: (int)amount, direction: DebtDirectionType.Receivable, creationTime: DateTimeOffset.UtcNow);
 
         _dbContext.Debts.Add(debtRecord);
         await _dbContext.SaveChangesAsync();

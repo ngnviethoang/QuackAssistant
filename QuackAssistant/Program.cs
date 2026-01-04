@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using QuackAssistant.ConfigurationOptions;
 using QuackAssistant.Data;
+using QuackAssistant.Data.Entities;
 using QuackAssistant.Services;
 using QuackAssistant.Shared.Dispatchers;
 using Telegram.Bot;
@@ -12,6 +13,7 @@ var appSettings = new AppSettings();
 builder.Configuration.Bind(appSettings);
 builder.Services.Configure<AppSettings>(builder.Configuration);
 
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 builder.Services.AddDbContextPool<QuackAssistantDbContext>(options =>
 {
     options.UseNpgsql(appSettings.ConnectionStrings.QuackAssistant);
@@ -32,10 +34,11 @@ builder.Services.Configure<RouteOptions>(options => options.LowercaseUrls = true
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
+await using (var scope = app.Services.CreateAsyncScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<QuackAssistantDbContext>();
     await dbContext.Database.MigrateAsync();
+    await DbInitializer.SeedAsync(dbContext);
 }
 
 if (app.Environment.IsDevelopment())

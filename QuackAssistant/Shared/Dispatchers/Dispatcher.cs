@@ -33,11 +33,27 @@ public sealed class Dispatcher : IDispatcher
 
     internal static void RegisterHandlers(IServiceCollection services)
     {
-        _commandHandlers = Assembly.GetExecutingAssembly().GetTypes()
-            .Where(type => !type.IsAbstract && typeof(ICommandHandler).IsAssignableFrom(type))
-            .Where(type => type.GetCustomAttribute<CommandAttribute>() != null)
-            .ToDictionary(type => type.GetCustomAttribute<CommandAttribute>()!.Name, i => i, StringComparer.OrdinalIgnoreCase);
+        var allTypes = Assembly.GetExecutingAssembly().GetTypes();
 
-        foreach (var type in _commandHandlers.Values) services.AddTransient(type);
+        var commandTypes = allTypes
+            .Where(t => !t.IsAbstract && typeof(ICommandHandler).IsAssignableFrom(t))
+            .Where(t => t.GetCustomAttribute<CommandAttribute>() != null)
+            .ToList();
+
+        _commandHandlers = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var type in commandTypes)
+        {
+            var attr = type.GetCustomAttribute<CommandAttribute>()!;
+
+            _commandHandlers.TryAdd(attr.Name, type);
+
+            if (!string.IsNullOrEmpty(attr.Alias))
+            {
+                _commandHandlers.TryAdd(attr.Alias, type);
+            }
+
+            services.AddTransient(type);
+        }
     }
 }

@@ -13,4 +13,6 @@ public sealed class CommandAttribute : Attribute
     public string? Description { get; init; }
 
     public string? Example { get; init; }
+
+    public string? Alias { get; init; }
 }

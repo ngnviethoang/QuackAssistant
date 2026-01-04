@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QuackAssistant.Data;
@@ -11,9 +12,11 @@ using QuackAssistant.Data;
 namespace QuackAssistant.Migrations
 {
     [DbContext(typeof(QuackAssistantDbContext))]
-    partial class QuackAssistantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260104170432_UpdateCode")]
+    partial class UpdateCode
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

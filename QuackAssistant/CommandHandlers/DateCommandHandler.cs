@@ -8,7 +8,7 @@ using Telegram.Bot.Types;
 
 namespace QuackAssistant.CommandHandlers;
 
-[Command(TeleCommands.Date, Description = "xem thu chi theo ngày", Example = "/date 03-01-2026")]
+// [Command(TeleCommands.Date, Description = "xem thu chi theo ngày", Example = "/date 03-01-2026")]
 public class DateCommandHandler : ICommandHandler
 {
     private readonly QuackAssistantDbContext _dbContext;
@@ -43,16 +43,11 @@ public class DateCommandHandler : ICommandHandler
             return;
         }
 
-        var vnTimeZone = Helper.GetVietnamTimeZone();
         var vnStart = inputDate.Date;
         var vnEnd = vnStart.AddDays(1);
 
-        // Convert sang UTC để query DB
-        var utcStart = TimeZoneInfo.ConvertTimeToUtc(vnStart, vnTimeZone);
-        var utcEnd = TimeZoneInfo.ConvertTimeToUtc(vnEnd, vnTimeZone);
-
         var transactions = await _dbContext.Transactions
-            .Where(t => t.TransactionTime >= utcStart && t.TransactionTime < utcEnd)
+            .Where(t => t.TransactionTime >= vnStart && t.TransactionTime < vnEnd)
             .ToListAsync();
 
         if (!transactions.Any())

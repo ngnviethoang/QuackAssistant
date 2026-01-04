@@ -11,7 +11,7 @@ using Telegram.Bot.Types;
 
 namespace QuackAssistant.CommandHandlers;
 
-[Command(TeleCommands.Expense, Description = "ghi khoản chi", Example = "/expense cafe 35k")]
+[Command(TeleCommands.Expense, Alias = "/+", Description = "record an expense", Example = "/expense cafe 35k")]
 public class ExpenseCommandHandler : ICommandHandler
 {
     private readonly QuackAssistantDbContext _dbContext;
@@ -30,23 +30,29 @@ public class ExpenseCommandHandler : ICommandHandler
 
     public async Task HandleAsync(Message message)
     {
-        if (string.IsNullOrEmpty(message.Text))
+        if (string.IsNullOrWhiteSpace(message.Text))
         {
             await _telegramBotClient.SendMessage(message.Chat.Id, "❌ Invalid format");
             return;
         }
 
-        var parts = message.Text.Split(' ', 3, StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length != 3)
+        var parts = message.Text.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length < 3)
         {
             await _telegramBotClient.SendMessage(message.Chat.Id, "❌ Invalid format");
             return;
         }
 
-        var note = parts.ElementAt(1);
-        var amountDigitsOnly = parts.ElementAt(2).Where(char.IsDigit).ToArray();
-        var canParseAmount = int.TryParse(amountDigitsOnly, out var amount);
-        if (string.IsNullOrEmpty(note) || !canParseAmount)
+        var amountText = parts[^1];
+        var amountDigitsOnly = amountText.Where(char.IsDigit).ToArray();
+        if (!int.TryParse(amountDigitsOnly, out var amount))
+        {
+            await _telegramBotClient.SendMessage(message.Chat.Id, "❌ Invalid format");
+            return;
+        }
+
+        var note = string.Join(' ', parts.Skip(1).Take(parts.Length - 2));
+        if (string.IsNullOrWhiteSpace(note))
         {
             await _telegramBotClient.SendMessage(message.Chat.Id, "❌ Invalid format");
             return;
@@ -57,47 +63,28 @@ public class ExpenseCommandHandler : ICommandHandler
             .ToListAsync();
 
         var prompt = $"""
-                      You are a finance assistant.
-                      Choose the best category for the following expense.
-
-                      Existing categories:
-                      {string.Join(", ", categories)}
-
-                      expense description:
-                      "{note}"
-
-                      Return ONLY the category name.
+                      You are a finance assistant. Choose the best category for the following expense. Existing categories:
+                      {string.Join(", ", categories)} expense description: "{note}" Return ONLY the category name.
                       """;
 
         var model = _googleAi.CreateGenerativeModel("gemini-2.5-flash");
         var response = await model.GenerateContentAsync(prompt);
 
         var categoryName = response.Text.Trim();
-        var category = await _dbContext.Categories.FirstOrDefaultAsync(c => c.Name == categoryName);
+        var category = await _dbContext.Categories.FirstOrDefaultAsync(c => string.Equals(c.Name, categoryName));
         if (category == null)
         {
-            category = new Category
-            {
-                Id = Guid.NewGuid(),
-                Name = categoryName
-            };
-
-            _dbContext.Categories.Add(category);
+            await _telegramBotClient.SendMessage(message.Chat.Id, "⚠️ No valid category found for this expense. The operation has been canceled.");
+            return;
         }
 
-        var transaction = new Transaction
-        {
-            Id = Guid.NewGuid(),
-            Amount = amount,
-            Type = "EXPENSE",
-            CategoryId = category.Id,
-            Note = note,
-            TransactionTime = DateTime.UtcNow
-        };
+        var vnDateTime = DateTime.UtcNow.AddHours(7);
+        var uniqueCode = vnDateTime.ToString("HH:mm dd/MM/yyyy");
+        var transaction = new Transaction(Guid.NewGuid(), amount, category.Id, note, vnDateTime, uniqueCode);
 
         _dbContext.Transactions.Add(transaction);
         await _dbContext.SaveChangesAsync();
 
-        await _telegramBotClient.SendMessage(message.Chat.Id, $"✅ Income added\n💰 {amount:N0}\n📂 {category.Name}");
+        await _telegramBotClient.SendMessage(message.Chat.Id, $"✅ Income added\n💰 {amount:N0}\n📂 {category.Name}\n🆔 Code: {uniqueCode}");
     }
 }
